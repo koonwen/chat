@@ -1,0 +1,10 @@
+(executable
+ (public_name chat)
+ (name main)
+ (libraries chat)
+ (modules main))
+
+(executables
+ (names server client)
+ (libraries chat)
+ (modules server client))

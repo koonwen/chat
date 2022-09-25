@@ -1,0 +1,3 @@
+(library
+ (name chat)
+ (libraries cohttp-lwt-unix))
