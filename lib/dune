@@ -1,3 +1,14 @@
 (library
  (name chat)
- (libraries cohttp-lwt-unix))
+ (libraries websocket-lwt-unix)
+ (modules client server))
+
+(executables
+ (names test try_connect)
+ (libraries websocket-lwt-unix)
+ (modules test try_connect))
+
+(env
+ (dev
+  (flags
+   (:standard -w -32))))
