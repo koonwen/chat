@@ -1,33 +1,49 @@
+open Unix
 open Lwt
-open Cohttp
-open Cohttp_lwt_unix
+open Lwt.Syntax
+open Core
 
-let send_message host_uri msg =
-  Client.post
-    ~body:(Cohttp_lwt.Body.of_string msg)
-    ~headers:(Header.init_with "time" "now")
-    host_uri
-  >>= (* On callback message *)
-  fun (resp, body) ->
-  let code = resp |> Response.status |> Code.code_of_status in
-  (* Check that message was received successfully *)
-  assert (code = 200);
-  (* Print "message received" indication *)
-  body |> Cohttp_lwt.Body.to_string >|= print_endline
+let msg_table = Array.init 10 ~f:(fun _ -> Time_ns.now ())
+let index = ref 0
 
-let start_chat host_uri () =
-  let rec loop () =
-    let msg = read_line () in
-    send_message host_uri msg >>= loop
+let get_sockaddr () =
+  (* let _host, _port = (Scanf.scanf "%s", read_int ()) in *)
+  let sockaddr = ADDR_INET (Core_unix.Inet_addr.localhost, 9000) in
+  sockaddr
+
+let rec handle_connection ic oc () =
+  let* msg = Lwt_io.read_line_opt Lwt_io.stdin in
+  match msg with
+  | Some m ->
+      msg_table.(!index) <- Time_ns.now ();
+      let p_msg = Printf.sprintf "%d %s" !index m in
+      Lwt_io.write_line oc p_msg >>= handle_response ic oc
+  | None ->
+      let _ = Lwt_io.close ic in
+      let _ = Lwt_io.close oc in
+      return_unit
+
+and handle_response ic oc () =
+  let* response = Lwt_io.read_line_opt ic in
+  match response with
+  | Some m ->
+      let id = Scanf.sscanf m "%d" (fun num -> num) in
+      let rtt =
+        Time_ns.abs_diff (Time_ns.now ()) msg_table.(id)
+        |> Time_ns.Span.to_string_hum
+      in
+      let recv = Printf.sprintf "[%s] Message Recieved" rtt in
+      print_endline recv |> return >>= handle_connection ic oc
+  | None -> failwith "Unhandled"
+
+let connect_to_host () =
+  let open Lwt_unix in
+  let socket_fd = socket PF_INET SOCK_STREAM 0 in
+  let sockaddr = get_sockaddr () in
+  let* _ = Lwt_unix.connect socket_fd sockaddr in
+  let ic, oc =
+    Lwt_io.(of_fd ~mode:Input socket_fd, of_fd ~mode:Output socket_fd)
   in
-  loop ()
+  handle_connection ic oc () >>= fun _ -> Lwt_unix.close socket_fd
 
-let connect ~host_uri =
-  let uri = host_uri |> Uri.of_string in
-  Client.head uri >>= fun resp ->
-  resp |> Response.status |> function
-  (* Upon successful connection, start chat *)
-  | `No_content ->
-      print_endline "Connection established";
-      start_chat uri ()
-  | _ -> print_endline "Connection failed" |> return
+let () = Lwt_main.run (connect_to_host ())

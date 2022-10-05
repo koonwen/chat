@@ -1,27 +1,51 @@
+open! Unix
 open! Lwt
-open! Cohttp
-open Cohttp_lwt_unix
+open! Lwt.Syntax
 
-(* Initial connection callback *)
-let create_client_connection _req =
-  Server.respond ~status:`No_content ~body:Cohttp_lwt.Body.empty ()
+module Config = struct
+  let listen_address = inet_addr_loopback
+  let port = 9000
+  let sockaddr = ADDR_INET (listen_address, port)
+  let backlog = 1
 
-(* Message reception callback *)
-let rec recieve_message req body =
-  assert (Request.is_keep_alive req);
-  body |> Cohttp_lwt.Body.to_string >|= print_endline
-  >>= Server.respond_string ~status:`OK ~body:"Message Recieved"
+  let setup_socket () =
+    let open Lwt_unix in
+    (* Create socket for IO *)
+    let socket = socket PF_INET SOCK_STREAM 0 in
+    (* Bind sockaddr in config to socket *)
+    let* _ = bind socket sockaddr in
+    listen socket backlog;
+    return socket
+end
 
-(* The server should only allow recieving messages if there is an initial
-   connection made *)
-let server =
-  let callback _conn req body =
-    req |> Request.meth |> function
-    | `HEAD -> create_client_connection req
-    | `POST -> recieve_message req body
-    | _ -> failwith ""
+module Handler = struct
+  type t = Lwt_io.input_channel -> Lwt_io.output_channel -> unit -> unit Lwt.t
+
+  let _handle_message msg =
+    match msg with
+    | "exit" -> failwith "Close connection"
+    | msg ->
+        let id, msg = Scanf.sscanf msg "%d %s" (fun id msg -> (id, msg)) in
+        (Int.to_string id, msg)
+
+  let rec handle_connection ic oc () =
+    Lwt_io.read_line_opt ic >>= fun msg ->
+    match msg with
+    | Some msg ->
+        let id, msg = _handle_message msg in
+        print_endline msg;
+        Lwt_io.write_line oc id >>= handle_connection ic oc
+    | None -> Logs_lwt.info (fun m -> m "Connection closed") >>= return
+end
+
+let establish_server () =
+  let* socket = Config.setup_socket () in
+  let rec server_accept_loop () =
+    let* socket_fd, _client_sockaddr = Lwt_unix.accept socket in
+    let ic = Lwt_io.of_fd ~mode:Lwt_io.Input socket_fd in
+    let oc = Lwt_io.of_fd ~mode:Lwt_io.Output socket_fd in
+    Handler.handle_connection ic oc () >>= server_accept_loop
   in
-  Server.make ~callback ()
+  server_accept_loop ()
 
-let listen () =
-  Lwt_main.run (Server.create ~backlog:1 ~mode:(`TCP (`Port 8000)) server)
+let () = Lwt_main.run (establish_server ()) |> ignore

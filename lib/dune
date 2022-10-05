@@ -1,3 +1,13 @@
-(library
- (name chat)
- (libraries cohttp-lwt-unix))
+; (library
+;  (name chat)
+;  (libraries cohttp-lwt-unix))
+
+(executables
+ (names client server)
+ (libraries lwt lwt.unix unix logs logs.lwt core core_unix)
+ (modules client server middleware))
+
+(env
+ (dev
+  (flags
+   (:standard -w -32-34))))
