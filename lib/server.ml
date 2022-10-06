@@ -1,9 +1,9 @@
-open! Unix
+open Core_unix
 open! Lwt
 open! Lwt.Syntax
 
 module Config = struct
-  let listen_address = inet_addr_loopback
+  let listen_address = Inet_addr.localhost
   let port = 9000
   let sockaddr = ADDR_INET (listen_address, port)
   let backlog = 1
@@ -26,7 +26,8 @@ module Handler = struct
     | "exit" -> failwith "Close connection"
     | msg ->
         let id, msg = Scanf.sscanf msg "%d %s" (fun id msg -> (id, msg)) in
-        (Int.to_string id, msg)
+        let fmt_msg = Printf.sprintf ">>> %s" msg in
+        (Int.to_string id, fmt_msg)
 
   let rec handle_connection ic oc () =
     Lwt_io.read_line_opt ic >>= fun msg ->
@@ -39,7 +40,11 @@ module Handler = struct
 end
 
 let establish_server () =
+  Printf.printf "Listening on %s:%d\n%!"
+    (Config.listen_address |> Inet_addr.to_string)
+    Config.port;
   let* socket = Config.setup_socket () in
+
   let rec server_accept_loop () =
     let* socket_fd, _client_sockaddr = Lwt_unix.accept socket in
     let ic = Lwt_io.of_fd ~mode:Lwt_io.Input socket_fd in
@@ -48,4 +53,4 @@ let establish_server () =
   in
   server_accept_loop ()
 
-let () = Lwt_main.run (establish_server ()) |> ignore
+let server () = Lwt_main.run (establish_server ()) |> ignore

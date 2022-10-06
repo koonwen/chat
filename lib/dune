@@ -2,8 +2,8 @@
 ;  (name chat)
 ;  (libraries cohttp-lwt-unix))
 
-(executables
- (names client server)
+(library
+ (name lib)
  (libraries lwt lwt.unix unix logs logs.lwt core core_unix)
  (modules client server middleware))
 

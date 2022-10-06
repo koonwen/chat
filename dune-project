@@ -23,7 +23,9 @@
   (ocaml
    (>= 4.14.0))
   dune
-  cohttp-lwt-unix)
+  core
+  core_unix
+  lwt)
  (tags
   (topics "to describe" your project)))
 

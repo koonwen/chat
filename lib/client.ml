@@ -6,9 +6,8 @@ open Core
 let msg_table = Array.init 10 ~f:(fun _ -> Time_ns.now ())
 let index = ref 0
 
-let get_sockaddr () =
-  (* let _host, _port = (Scanf.scanf "%s", read_int ()) in *)
-  let sockaddr = ADDR_INET (Core_unix.Inet_addr.localhost, 9000) in
+let get_sockaddr host port =
+  let sockaddr = ADDR_INET (host, port) in
   sockaddr
 
 let rec handle_connection ic oc () =
@@ -36,14 +35,14 @@ and handle_response ic oc () =
       print_endline recv |> return >>= handle_connection ic oc
   | None -> failwith "Unhandled"
 
-let connect_to_host () =
+let connect_to_host host port =
   let open Lwt_unix in
   let socket_fd = socket PF_INET SOCK_STREAM 0 in
-  let sockaddr = get_sockaddr () in
+  let sockaddr = get_sockaddr host port in
   let* _ = Lwt_unix.connect socket_fd sockaddr in
   let ic, oc =
     Lwt_io.(of_fd ~mode:Input socket_fd, of_fd ~mode:Output socket_fd)
   in
   handle_connection ic oc () >>= fun _ -> Lwt_unix.close socket_fd
 
-let () = Lwt_main.run (connect_to_host ())
+let client host port = Lwt_main.run (connect_to_host host port)

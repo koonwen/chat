@@ -1,8 +1,4 @@
 (executable
  (public_name chat)
+ (libraries lib cmdliner)
  (name main))
-
-; (executables
-;  (names server client)
-;  (libraries chat)
-;  (modules server client))
