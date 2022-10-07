@@ -1,4 +1,3 @@
-open Unix
 open Lwt
 open Lwt.Syntax
 open Core
@@ -7,19 +6,10 @@ module Config = struct
   let msg_table = Array.init 1 ~f:(fun _ -> Time_ns.now ())
   let index = ref 0
 
-  (* Only IPv4 supported *)
-  let create_sockaddr host port =
-    let sockaddr = ADDR_INET (host, port) in
-    sockaddr
-
   (* Abstract the incrementing logic here *)
 end
 
-let handle_connection socket_fd =
-  let ic, oc =
-    Lwt_io.(of_fd ~mode:Input socket_fd, of_fd ~mode:Output socket_fd)
-  in
-
+let message_handler ic oc =
   let rec send_message () =
     let* msg = Lwt_io.read_line_opt Lwt_io.stdin in
     match msg with
@@ -46,17 +36,18 @@ let handle_connection socket_fd =
           print_endline recv |> return >>= send_message
     | None -> failwith "Unhandled"
   in
-
   send_message ()
 
-let connect_to_host host port =
-  let open Lwt_unix in
-  let socket_fd = socket PF_INET SOCK_STREAM 0 in
-  let sockaddr = Config.create_sockaddr host port in
-  let* _ = Lwt_unix.connect socket_fd sockaddr in
-  return socket_fd
+let handle_connection socket_fd handler =
+  let ic, oc =
+    Lwt_io.(of_fd ~mode:Input socket_fd, of_fd ~mode:Output socket_fd)
+  in
+  handler ic oc
 
 let connect host port =
-  let* socket_fd = connect_to_host host port in
-  let* _ = handle_connection socket_fd in
+  let socket = Util.new_socket () in
+  let sockaddr = Util.get_sockaddr host port in
+  Core_unix.connect socket ~addr:sockaddr;
+  let socket_fd = Lwt_unix.of_unix_file_descr socket in
+  let* _ = handle_connection socket_fd message_handler in
   Lwt_unix.close socket_fd

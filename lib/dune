@@ -4,8 +4,7 @@
 
 (library
  (name lib)
- (libraries lwt lwt.unix unix logs logs.lwt core core_unix)
- (modules client server middleware))
+ (libraries lwt lwt.unix unix logs logs.lwt core core_unix))
 
 (env
  (dev

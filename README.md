@@ -3,10 +3,16 @@ CLI Chat Application in OCaml
 
 # TODO
 - [x] CLI Parsing
+- [x] Separate the sending messages and recieving messages channel
+- [x] Server -> Client connection (2 modes)
 - [ ] Modularize Client
 - [ ] Add Lwt_logs to print out info
 - [ ] Safe termination
 - [ ] Testing
-- [ ] Server -> Client connection (2 modes)
 - [ ] Setup dependencies and build instructions
-- [ ] Separate the sending messages and recieving messages channel
+
+
+# Structure
+lib
+- client: Start listener (validate client connecting) and THEN attempt to connect to the server
+- server : Listen and upon connection THEN attempt to connect to the server

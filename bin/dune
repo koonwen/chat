@@ -1,4 +1,4 @@
 (executable
  (public_name chat)
- (libraries lib cmdliner)
+ (libraries lib cmdliner core_unix lwt)
  (name main))
