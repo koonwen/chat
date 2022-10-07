@@ -35,4 +35,4 @@ let chat client server =
     group (info "chat" ~doc)
       [ subcommand_connect client; subcommand_listen server ])
 
-let cli_wrapper ~client ~server = Cmd.eval (chat client server) |> exit
+let cli_wrapper ~connect ~listen = Cmd.eval (chat connect listen) |> exit
