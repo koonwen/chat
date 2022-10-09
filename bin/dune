@@ -2,8 +2,3 @@
  (name chat)
  (public_name chat)
  (libraries websocket-lwt-unix))
-
-; (executables
-;  (names server client)
-;  (libraries chat)
-;  (modules server client))

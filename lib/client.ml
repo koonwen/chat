@@ -1,40 +1,56 @@
-open! Lwt.Infix
-open! Lwt.Syntax
 open Websocket_lwt_unix
+open Websocket
+open Lwt.Syntax
+open! Lwt
 
-let section = Lwt_log.Section.make "wscat"
+let rtt_tbl = Hashtbl.create 10
 
-let client uri =
-  let open Websocket in
-  Resolver_lwt.resolve_uri ~uri Resolver_lwt_unix.system >>= fun endp ->
-  let ctx = Lazy.force Conduit_lwt_unix.default_ctx in
-  Conduit_lwt_unix.endp_to_client ~ctx endp >>= fun client ->
-  connect ~ctx client uri >>= fun conn ->
-  let close_sent = ref false in
-  let rec react () =
-    Websocket_lwt_unix.read conn >>= function
-    | { Frame.opcode = Ping; _ } ->
-        write conn (Frame.create ~opcode:Pong ()) >>= react
-    | { opcode = Close; content; _ } ->
-        (* Immediately echo and pass this last message to the user *)
-        (if !close_sent then Lwt.return_unit
-        else if String.length content >= 2 then
-          write conn
-            (Frame.create ~opcode:Close ~content:(String.sub content 0 2) ())
-        else write conn (Frame.close 1000))
-        >>= fun () -> Websocket_lwt_unix.close_transport conn
-    | { opcode = Pong; _ } -> react ()
-    | { opcode = Text; content; _ } | { opcode = Binary; content; _ } ->
-        Lwt_io.printf "> %s\n> %!" content >>= react
-    | _ -> Websocket_lwt_unix.close_transport conn
-  in
-  let rec pushf () =
-    Lwt_io.(read_line_opt stdin) >>= function
-    | None ->
-        Lwt_log.debug ~section "Got EOF. Sending a close frame." >>= fun () ->
-        write conn (Frame.create ~opcode:Close ()) >>= fun () ->
-        close_sent := true;
-        pushf ()
-    | Some content -> write conn (Frame.create ~content ()) >>= pushf
-  in
-  pushf () <?> react ()
+(* Make this a wrapper over the message *)
+let prep_message =
+  let counter = ref 0 in
+  fun () ->
+    incr counter;
+    Hashtbl.add rtt_tbl !counter (Time_unix.now ())
+
+let get_rtt id =
+  let curr = Time_unix.now () in
+  let prev = Hashtbl.find rtt_tbl id in
+  Time_unix.abs_diff curr prev
+
+let rec receive_messege conn () =
+  read conn >>= fun f ->
+  let msg_id = Scanf.sscanf f.content "%s %d %s" (fun _ id _ -> id) in
+  let rtt = get_rtt msg_id |> Time_unix.Span.to_string_hum in
+  Lwt_io.printf "RTT : %s %s\n%!" rtt (Websocket.Frame.show f)
+  >>= receive_messege conn
+
+let rec send_message conn () =
+  Lwt_io.(read_line_opt stdin) >>= function
+  | Some content ->
+      prep_message ();
+      let frame = Websocket.Frame.create ~content () in
+      write conn frame >>= send_message conn
+  | None ->
+      write conn (Frame.create ~opcode:Close ()) >>= fun _ ->
+      Websocket_lwt_unix.close_transport conn >>= fun _ ->
+      Lwt_io.printl "Connection Terminated"
+
+let start_client () =
+  (* Add in logic when process ends with Ctrl-C to shutdown connection and send
+     close message *)
+  Lwt_main.run
+    (let uri = Uri.of_string "http://localhost:8000" in
+     let* endpt = Resolver_lwt.resolve_uri ~uri Resolver_lwt_unix.system in
+     let open Conduit_lwt_unix in
+     let ctx = Lazy.force default_ctx in
+     let* client = Conduit_lwt_unix.endp_to_client ~ctx endpt in
+     let* conn = Websocket_lwt_unix.connect client uri in
+     send_message conn () <?> receive_messege conn ());
+  ()
+
+let connect uri =
+  let* endpt = Resolver_lwt.resolve_uri ~uri Resolver_lwt_unix.system in
+  let open Conduit_lwt_unix in
+  let ctx = Lazy.force default_ctx in
+  let* client = Conduit_lwt_unix.endp_to_client ~ctx endpt in
+  Websocket_lwt_unix.connect client uri
