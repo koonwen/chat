@@ -6,6 +6,9 @@ module Middleware = struct
   type t =
     (Connected_client.t -> unit Lwt.t) -> Connected_client.t -> unit Lwt.t
 
+  let install (middleware_list : t list) main_handler client =
+    List.fold_left (fun h m -> m h) main_handler middleware_list @@ client
+
   let open_connection_limit = 1
   let live_connections = ref 0
 
@@ -13,10 +16,10 @@ module Middleware = struct
     incr live_connections;
     if !live_connections > open_connection_limit then
       failwith "Exceeded Connections"
-    else next client >|= fun _ -> decr live_connections
-
-  let install (middleware_list : t list) main_handler client =
-    List.fold_left (fun h m -> m h) main_handler middleware_list @@ client
+    else
+      let req = Connected_client.http_request client in
+      assert (Websocket.check_origin_with_host req);
+      next client >|= fun _ -> decr live_connections
 end
 
 let make_response =
@@ -26,28 +29,22 @@ let make_response =
     let content = Printf.sprintf "Message %d Recieved!" !counter in
     Websocket.Frame.create ~content ()
 
-let rec main_handler client =
+let rec message_handler client =
   let open Connected_client in
   let* in_frame = recv client in
   match in_frame with
   | { opcode = Text; content; _ } ->
-      let _ = Lwt_io.printl content in
-      send client (make_response ()) >>= (* Reuse the main_handler *)
-                                     fun _ -> main_handler client
+      let fmt_msg = ">>> " ^ content in
+      let _ = Lwt_io.printl fmt_msg in
+      send client (make_response ()) >>= (* Reuse the message_handler *)
+                                     fun _ -> message_handler client
   | { opcode = Close; _ } -> Lwt_io.printl "Connection Terminated"
   | _ -> failwith "Not implemented"
 
-let start_server () =
-  let mode = `TCP (`Port 8000) in
-  let server = Middleware.(install [ validate_conn ] main_handler) in
-  Lwt_main.run (establish_standard_server ~mode server)
-
-let start_server1 () =
-  let mode = `TCP (`Port 8001) in
-  let server = Middleware.(install [ validate_conn ] main_handler) in
-  establish_standard_server ~mode server
-
-let start_server2 () =
-  let mode = `TCP (`Port 8000) in
-  let server = Middleware.(install [ validate_conn ] main_handler) in
-  establish_standard_server ~mode server
+let get_server_uri conn_client =
+  let headers =
+    Connected_client.http_request conn_client |> Cohttp.Request.headers
+  in
+  match Cohttp.Header.get headers "client_accept_uri" with
+  | Some uri -> uri |> Uri.of_string
+  | None -> failwith "No client_uri"

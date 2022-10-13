@@ -1,7 +1,6 @@
 open Websocket_lwt_unix
 open Websocket
-open Lwt.Syntax
-open! Lwt
+open Lwt
 
 let rtt_tbl = Hashtbl.create 10
 
@@ -17,12 +16,14 @@ let get_rtt id =
   let prev = Hashtbl.find rtt_tbl id in
   Time_unix.abs_diff curr prev
 
-let rec receive_messege conn () =
-  read conn >>= fun f ->
-  let msg_id = Scanf.sscanf f.content "%s %d %s" (fun _ id _ -> id) in
-  let rtt = get_rtt msg_id |> Time_unix.Span.to_string_hum in
-  Lwt_io.printf "RTT : %s %s\n%!" rtt (Websocket.Frame.show f)
-  >>= receive_messege conn
+let rec recv_ack conn () =
+  read conn >>= function
+  | { opcode = Text; content; _ } as frame ->
+      let msg_id = Scanf.sscanf content "%s %d %s" (fun _ id _ -> id) in
+      let rtt = get_rtt msg_id |> Time_unix.Span.to_string_hum in
+      Lwt_io.printf "RTT : %s %s\n%!" rtt (Websocket.Frame.show frame)
+      >>= recv_ack conn
+  | _ -> Lwt.fail_with "Not implemented"
 
 let rec send_message conn () =
   Lwt_io.(read_line_opt stdin) >>= function
@@ -34,23 +35,3 @@ let rec send_message conn () =
       write conn (Frame.create ~opcode:Close ()) >>= fun _ ->
       Websocket_lwt_unix.close_transport conn >>= fun _ ->
       Lwt_io.printl "Connection Terminated"
-
-let start_client () =
-  (* Add in logic when process ends with Ctrl-C to shutdown connection and send
-     close message *)
-  Lwt_main.run
-    (let uri = Uri.of_string "http://localhost:8000" in
-     let* endpt = Resolver_lwt.resolve_uri ~uri Resolver_lwt_unix.system in
-     let open Conduit_lwt_unix in
-     let ctx = Lazy.force default_ctx in
-     let* client = Conduit_lwt_unix.endp_to_client ~ctx endpt in
-     let* conn = Websocket_lwt_unix.connect client uri in
-     send_message conn () <?> receive_messege conn ());
-  ()
-
-let connect uri =
-  let* endpt = Resolver_lwt.resolve_uri ~uri Resolver_lwt_unix.system in
-  let open Conduit_lwt_unix in
-  let ctx = Lazy.force default_ctx in
-  let* client = Conduit_lwt_unix.endp_to_client ~ctx endpt in
-  Websocket_lwt_unix.connect client uri

@@ -1,7 +1,7 @@
-; (library
-;  (name chat)
-;  (libraries websocket-lwt-unix)
-;  (modules client server))
+(library
+ (name chat)
+ (libraries websocket-lwt-unix core_unix core_unix.time_unix)
+ (modules client server util))
 
 ; (executables
 ;  (names client server)
@@ -10,8 +10,8 @@
 
 (executables
  (names connector listener)
- (libraries websocket-lwt-unix core_unix core_unix.time_unix)
- (modules connector listener server client))
+ (libraries websocket-lwt-unix core_unix core_unix.time_unix chat)
+ (modules connector listener))
 
 ; (env
 ;  (dev
