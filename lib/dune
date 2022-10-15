@@ -3,17 +3,12 @@
  (libraries websocket-lwt-unix core_unix core_unix.time_unix)
  (modules client server util))
 
-; (executables
-;  (names client server)
-;  (libraries websocket-lwt-unix core_unix core_unix.time_unix)
-;  (modules client server))
-
 (executables
  (names connector listener)
  (libraries websocket-lwt-unix core_unix core_unix.time_unix chat)
  (modules connector listener))
 
-; (env
-;  (dev
-;   (flags
-;    (:standard -w -32))))
+(env
+ (dev
+  (flags
+   (:standard -w -32))))

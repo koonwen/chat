@@ -1,10 +1,8 @@
-open Websocket_lwt_unix
 open Websocket
 open Lwt
 
 let rtt_tbl = Hashtbl.create 10
 
-(* Make this a wrapper over the message *)
 let prep_message =
   let counter = ref 0 in
   fun () ->
@@ -16,22 +14,32 @@ let get_rtt id =
   let prev = Hashtbl.find rtt_tbl id in
   Time_unix.abs_diff curr prev
 
-let rec recv_ack conn () =
-  read conn >>= function
+let recv_ack_f : Websocket.Frame.t -> unit = function
   | { opcode = Text; content; _ } as frame ->
       let msg_id = Scanf.sscanf content "%s %d %s" (fun _ id _ -> id) in
       let rtt = get_rtt msg_id |> Time_unix.Span.to_string_hum in
-      Lwt_io.printf "RTT : %s %s\n%!" rtt (Websocket.Frame.show frame)
-      >>= recv_ack conn
-  | _ -> Lwt.fail_with "Not implemented"
+      Printf.printf "RTT : %s %s\n%!" rtt (Websocket.Frame.show frame)
+  | _ -> failwith "Not implemented"
 
-let rec send_message conn () =
+let send_message_f write =
   Lwt_io.(read_line_opt stdin) >>= function
   | Some content ->
       prep_message ();
       let frame = Websocket.Frame.create ~content () in
-      write conn frame >>= send_message conn
-  | None ->
-      write conn (Frame.create ~opcode:Close ()) >>= fun _ ->
-      Websocket_lwt_unix.close_transport conn >>= fun _ ->
-      Lwt_io.printl "Connection Terminated"
+      write frame
+  | None -> failwith "No inputs"
+
+let make_response =
+  let counter = ref 0 in
+  fun () ->
+    incr counter;
+    let content = Printf.sprintf "Message %d Recieved!" !counter in
+    Websocket.Frame.create ~content ()
+
+let respond_rtt_f (write : Frame.t -> unit t) (frame : Websocket.Frame.t) =
+  match frame with
+  | { opcode = Text; content; _ } ->
+      let fmt_msg = ">>> " ^ content in
+      let _ = print_endline fmt_msg in
+      write (make_response ())
+  | _ -> failwith "Not implemented"
