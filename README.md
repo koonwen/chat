@@ -3,9 +3,6 @@ CLI Chat Application in OCaml
 
 # TODO
 - [x] CLI Parsing
-- [x] Separate the sending messages and recieving messages channel
-- [x] Server -> Client connection (2 modes)
-- [ ] Modularize Client
 - [ ] Add Lwt_logs to print out info
 - [ ] Safe termination
 - [ ] Testing

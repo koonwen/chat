@@ -22,18 +22,12 @@ let subcommand_connect f =
     Arg.(value & pos 2 int 9000 & info [] ~docv:"HOST_PORT" ~doc)
   in
 
-  let listen_port =
-    let doc = "Port for recieving messages from host" in
-    Arg.(value & pos 3 int 9001 & info [] ~docv:"LISTEN_PORT" ~doc)
-  in
-
   let doc =
     "Attempt to connect to HOST:HOST_PORT to initiate chat. Also open another \
      separate LISTEN_PORT to run a server to listen and recieve messages from \
      the HOST"
   in
-  Cmd.v (Cmd.info ~doc "connect")
-    Term.(const f $ host $ host_port $ listen_port)
+  Cmd.v (Cmd.info ~doc "connect") Term.(const f $ host $ host_port)
 
 let subcommand_listen f =
   let doc = "Start chat application in listen mode and wait for connections" in
