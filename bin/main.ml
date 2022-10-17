@@ -1,3 +1,3 @@
 open Lib
 
-let () = Cli.cli_wrapper ~connect:Client.start_chat ~listen:Server.serve
+let () = Cli.cli_wrapper ~client:Client.start_chat ~server:Server.serve
