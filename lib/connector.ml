@@ -19,9 +19,9 @@ let rec message_handler conn =
 
 let connect uri =
   let* client = Util.resolve_client_uri ~uri in
-  (* Client logic *)
+  (* Client Messenger logic *)
   let* conn1 = Websocket_lwt_unix.connect client uri in
-  (* Server logic *)
+  (* Server Reciever logic *)
   let* conn2 = Websocket_lwt_unix.connect client uri in
   send_message conn1 () <?> recv_ack conn1 () <?> message_handler conn2
 
