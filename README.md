@@ -10,6 +10,24 @@ CLI Chat Application in OCaml
 
 
 # Structure
-lib
-- client: Start listener (validate client connecting) and THEN attempt to connect to the server
-- server : Listen and upon connection THEN attempt to connect to the server
+```
+.
+├── Makefile
+├── README.md
+├── bin
+│   ├── cli.ml
+│   ├── dune
+│   └── main.ml
+├── chat.opam
+├── dune-project
+├── lib
+│   ├── client.ml
+│   ├── dune
+│   ├── handler.ml
+│   ├── serializer.ml
+│   ├── server.ml
+│   └── sockUtil.ml
+└── test
+    ├── chat.ml
+    └── dune
+```
