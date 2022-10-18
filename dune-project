@@ -23,9 +23,12 @@
   (ocaml
    (>= 4.14.0))
   dune
-  core
   core_unix
-  lwt)
+  lwt
+  logs
+  cmdliner
+  ocaml-lsp-server:dev
+  ocamlformat:dev)
  (tags
   (topics "to describe" your project)))
 

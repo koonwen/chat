@@ -12,9 +12,12 @@ bug-reports: "https://github.com/username/reponame/issues"
 depends: [
   "ocaml" {>= "4.14.0"}
   "dune" {>= "3.1"}
-  "core"
   "core_unix"
   "lwt"
+  "logs"
+  "cmdliner"
+  "ocaml-lsp-server:dev"
+  "ocamlformat:dev"
   "odoc" {with-doc}
 ]
 build: [
