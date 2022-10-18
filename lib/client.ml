@@ -15,4 +15,4 @@ let start_chat host host_port =
   Lwt_main.run
     (let* fd = connect host host_port in
      let fd = Lwt_unix.of_unix_file_descr ~blocking:true fd in
-     Sock_util.handle_connection fd Handler.handler)
+     Sock_util.handle_connection fd Handler.chat_handler)

@@ -8,7 +8,7 @@ open Lwt
    0x8   0x8    0x8 .... \n
 *)
 
-type code = Ack | Msg | Close | CloseAck
+type code = Ack | Msg | Close | CloseAck | Reject
 
 let decode code =
   match Char.code code with
@@ -16,10 +16,18 @@ let decode code =
   | 1 -> Msg
   | 2 -> Close
   | 3 -> CloseAck
+  | 4 -> Reject
   | _ -> failwith "Invalid code"
 
 let encode code =
-  let i = match code with Ack -> 0 | Msg -> 1 | Close -> 2 | CloseAck -> 3 in
+  let i =
+    match code with
+    | Ack -> 0
+    | Msg -> 1
+    | Close -> 2
+    | CloseAck -> 3
+    | Reject -> 4
+  in
   Char.chr i
 
 type packet = { id : int; code : code; content : string }

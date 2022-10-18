@@ -59,10 +59,11 @@ let rec chat_recv ic oc () =
         let* _ = Serializer.send oc packet in
         raise ServerDrop
     | CloseAck -> raise ClientClose
+    | Reject -> raise ClientClose
   in
   Serializer.recv ic >>= react >>= chat_recv ic oc
 
-let handler ic oc close_fd =
+let chat_handler ic oc close_fd =
   let p () =
     let t1 = chat_recv ic oc () in
     let t2 = chat_send ic oc () in
@@ -84,3 +85,7 @@ let handler ic oc close_fd =
         Lwt.return_unit
   in
   Lwt.catch p f
+
+let reject_handler _ic oc _close_fd =
+  let packet = Serializer.make_packet Reject in
+  Serializer.send oc packet
