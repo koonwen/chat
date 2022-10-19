@@ -1,3 +1,12 @@
+; (library
+;  (name chat)
+;  (libraries cohttp-lwt-unix))
+
 (library
- (name chat)
- (libraries cohttp-lwt-unix))
+ (name lib)
+ (libraries lwt lwt.unix unix logs logs.lwt core core_unix))
+
+(env
+ (dev
+  (flags
+   (:standard -w -32-34))))

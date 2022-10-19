@@ -1,33 +1,18 @@
 open Lwt
-open Cohttp
-open Cohttp_lwt_unix
+open Lwt.Syntax
 
-let send_message host_uri msg =
-  Client.post
-    ~body:(Cohttp_lwt.Body.of_string msg)
-    ~headers:(Header.init_with "time" "now")
-    host_uri
-  >>= (* On callback message *)
-  fun (resp, body) ->
-  let code = resp |> Response.status |> Code.code_of_status in
-  (* Check that message was received successfully *)
-  assert (code = 200);
-  (* Print "message received" indication *)
-  body |> Cohttp_lwt.Body.to_string >|= print_endline
-
-let start_chat host_uri () =
-  let rec loop () =
-    let msg = read_line () in
-    send_message host_uri msg >>= loop
+let connect host port =
+  let* _ =
+    Lwt_io.printlf "Establishing connection with %s:%d ..."
+      (Core_unix.Inet_addr.to_string host)
+      port
   in
-  loop ()
+  let client_socket = SockUtil.create_client_socket host port in
+  let* _ = Lwt_io.printl "Connected!" in
+  return client_socket
 
-let connect ~host_uri =
-  let uri = host_uri |> Uri.of_string in
-  Client.head uri >>= fun resp ->
-  resp |> Response.status |> function
-  (* Upon successful connection, start chat *)
-  | `No_content ->
-      print_endline "Connection established";
-      start_chat uri ()
-  | _ -> print_endline "Connection failed" |> return
+let start_chat host host_port =
+  Lwt_main.run
+    (let* fd = connect host host_port in
+     let fd = Lwt_unix.of_unix_file_descr ~blocking:true fd in
+     SockUtil.handle_connection fd Handler.chat_handler)

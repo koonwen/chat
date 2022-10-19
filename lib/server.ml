@@ -1,27 +1,37 @@
-open! Lwt
-open! Cohttp
-open Cohttp_lwt_unix
+open Lwt
+open Lwt.Syntax
+open Lwt.Infix
 
-(* Initial connection callback *)
-let create_client_connection _req =
-  Server.respond ~status:`No_content ~body:Cohttp_lwt.Body.empty ()
+let curr_connections = ref 0
 
-(* Message reception callback *)
-let rec recieve_message req body =
-  assert (Request.is_keep_alive req);
-  body |> Cohttp_lwt.Body.to_string >|= print_endline
-  >>= Server.respond_string ~status:`OK ~body:"Message Recieved"
+let listen port =
+  let localhost = Core_unix.Inet_addr.localhost in
+  let server_socket = SockUtil.create_server_socket localhost port in
+  Printf.printf "Listening on %s:%d\n%!"
+    (Core_unix.Inet_addr.to_string localhost)
+    port;
+  Lwt_unix.of_unix_file_descr server_socket
 
-(* The server should only allow recieving messages if there is an initial
-   connection made *)
-let server =
-  let callback _conn req body =
-    req |> Request.meth |> function
-    | `HEAD -> create_client_connection req
-    | `POST -> recieve_message req body
-    | _ -> failwith ""
-  in
-  Server.make ~callback ()
+(* Make this into a wrapper *)
+let validate_connection conn =
+  if !curr_connections < SockUtil.conn_limit then (
+    incr curr_connections;
+    return_ok conn)
+  else return_error conn
 
-let listen () =
-  Lwt_main.run (Server.create ~backlog:1 ~mode:(`TCP (`Port 8000)) server)
+let rec accept_conn_loop socket () =
+  let* socket_fd, client_sockaddr = Lwt_unix.accept socket in
+  let client_addr = SockUtil.sockaddr_to_string client_sockaddr in
+  let* _ = Lwt_io.printlf "Connected to %s" client_addr in
+  validate_connection socket_fd
+  >>= (function
+        | Error sock -> SockUtil.handle_connection sock Handler.reject_handler
+        | Ok sock ->
+            SockUtil.handle_connection sock Handler.chat_handler >|= fun _ ->
+            decr curr_connections)
+  <&> accept_conn_loop socket ()
+
+let serve port =
+  Lwt_main.run
+    (let fd = listen port in
+     accept_conn_loop fd ())

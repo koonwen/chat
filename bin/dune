@@ -1,10 +1,4 @@
 (executable
  (public_name chat)
- (name main)
- (libraries chat)
- (modules main))
-
-(executables
- (names server client)
- (libraries chat)
- (modules server client))
+ (libraries lib cmdliner core_unix lwt)
+ (name main))
