@@ -14,12 +14,12 @@ let subcommand_connect f =
   let host =
     let doc = "HOST to connect to" in
     Arg.(
-      value & pos 1 inet_conv Inet_addr.localhost & info [] ~docv:"HOST" ~doc)
+      value & pos 0 inet_conv Inet_addr.localhost & info [] ~docv:"HOST" ~doc)
   in
 
   let host_port =
     let doc = "HOST port number" in
-    Arg.(value & pos 2 int 9000 & info [] ~docv:"HOST_PORT" ~doc)
+    Arg.(value & pos 1 int 9000 & info [] ~docv:"HOST_PORT" ~doc)
   in
 
   let doc = "Attempt to connect to HOST:HOST_PORT to initiate chat." in
@@ -28,7 +28,7 @@ let subcommand_connect f =
 let subcommand_listen f =
   let port =
     let doc = "HOST port number" in
-    Arg.(value & pos 2 int 9000 & info [] ~docv:"HOST_PORT" ~doc)
+    Arg.(value & pos 0 int 9000 & info [] ~docv:"HOST_PORT" ~doc)
   in
 
   let doc = "Start chat application in listen mode and wait for connections" in

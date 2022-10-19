@@ -7,7 +7,7 @@ let curr_connections = ref 0
 let listen port =
   let localhost = Core_unix.Inet_addr.localhost in
   let server_socket = SockUtil.create_server_socket localhost port in
-  Printf.printf "Listening on %s:%d"
+  Printf.printf "Listening on %s:%d\n%!"
     (Core_unix.Inet_addr.to_string localhost)
     port;
   Lwt_unix.of_unix_file_descr server_socket
