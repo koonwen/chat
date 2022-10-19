@@ -3,10 +3,10 @@ CLI Chat Application in OCaml
 
 # TODO
 - [x] CLI Parsing
+- [x] Setup dependencies and build instructions
 - [ ] Add Lwt_logs to print out info
 - [ ] Safe termination
 - [ ] Testing
-- [x] Setup dependencies and build instructions
 
 # Build & Running
 ```bash
@@ -19,6 +19,9 @@ dune exec -- chat listen [PORT]
 # Run client
 dune exec -- chat server [HOST] [PORT]
 ```
+To terminate connection from the client, use CTRL-D.
+
+**Note** Safe termination using CTRL-C not yet implemented.
 # Structure
 ```
 .

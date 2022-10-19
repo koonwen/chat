@@ -13,17 +13,17 @@ let listen port =
   Lwt_unix.of_unix_file_descr server_socket
 
 (* Make this into a wrapper *)
-let validate_connection conn =
+let validate_connection socket_fd client_sockaddr =
   if !curr_connections < SockUtil.conn_limit then (
     incr curr_connections;
-    return_ok conn)
-  else return_error conn
+    let client_addr = SockUtil.sockaddr_to_string client_sockaddr in
+    Printf.printf "Connected to %s\n%!" client_addr;
+    return_ok socket_fd)
+  else return_error socket_fd
 
 let rec accept_conn_loop socket () =
   let* socket_fd, client_sockaddr = Lwt_unix.accept socket in
-  let client_addr = SockUtil.sockaddr_to_string client_sockaddr in
-  let* _ = Lwt_io.printlf "Connected to %s" client_addr in
-  validate_connection socket_fd
+  validate_connection socket_fd client_sockaddr
   >>= (function
         | Error sock -> SockUtil.handle_connection sock Handler.reject_handler
         | Ok sock ->

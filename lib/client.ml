@@ -1,6 +1,3 @@
-open Lwt
-open Lwt.Syntax
-
 let connect host port =
   Printf.printf "Establishing connection with %s:%d ...\n%!"
     (Core_unix.Inet_addr.to_string host)
