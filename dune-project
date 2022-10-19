@@ -24,8 +24,7 @@
   lwt
   logs
   cmdliner
-  ocaml-lsp-server:dev
-  ocamlformat:dev)
+)
  (tags
   (chat client server tcp_lwt cohttp_lwt websocket_lwt)))
 

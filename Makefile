@@ -1,6 +1,7 @@
 .PHONY=switch
 switch:
 	opam switch create . 4.14.0 --deps-only
+	eval $(opam env)
 
 build:
 	dune build -w --terminal-persistence=clear-on-rebuild

@@ -15,8 +15,6 @@ depends: [
   "lwt"
   "logs"
   "cmdliner"
-  "ocaml-lsp-server:dev"
-  "ocamlformat:dev"
   "odoc" {with-doc}
 ]
 build: [
