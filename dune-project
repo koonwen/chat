@@ -15,7 +15,7 @@
  (name chat)
  (synopsis "A CLI Chat application in OCaml")
  (description
-  "Chat application that can be started in two modes: client/server.Both sides can send and recieve messages, the sending side shows the RTT time for the message to be delivered. After connection is terminated by the client, the server can continue accepting connections")
+  "Chat application that can be started in two modes: client/server. Both sides can send and recieve messages, the sending side shows the RTT time for the message to be delivered. After connection is terminated by the client, the server can continue accepting connections")
  (depends
   (ocaml
    (>= 4.14.0))

@@ -6,9 +6,19 @@ CLI Chat Application in OCaml
 - [ ] Add Lwt_logs to print out info
 - [ ] Safe termination
 - [ ] Testing
-- [ ] Setup dependencies and build instructions
+- [x] Setup dependencies and build instructions
 
-
+# Build & Running
+```bash
+# Install switch and dependencies
+make switch
+# To pull up the CLI interface
+dune exec -- chat --help
+# Run server
+dune exec -- chat listen [PORT]
+# Run client
+dune exec -- chat server [HOST] [PORT]
+```
 # Structure
 ```
 .
@@ -31,3 +41,6 @@ CLI Chat Application in OCaml
     ├── chat.ml
     └── dune
 ```
+
+# Pipeline
+![Pipeline UML diagram](resources/chat.png)

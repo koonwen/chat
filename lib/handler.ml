@@ -24,9 +24,6 @@ module RTT = struct
   let rtt_to_string = Span.to_string_hum
 end
 
-exception ClientClose
-exception ServerDrop
-
 let rec chat_send _ic oc () =
   let user_input () =
     Lwt_io.(read_line_opt stdin) >>= function
@@ -41,6 +38,9 @@ let rec chat_send _ic oc () =
         Serializer.send oc packet
   in
   user_input () >>= chat_send _ic oc
+
+exception ClientClose
+exception ServerDrop
 
 let rec chat_recv ic oc () =
   let react ({ id; code; content } : Serializer.packet) =

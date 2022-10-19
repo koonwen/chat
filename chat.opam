@@ -2,7 +2,7 @@
 opam-version: "2.0"
 synopsis: "A CLI Chat application in OCaml"
 description:
-  "Chat application that can be started in two modes: client/server.Both sides can send and recieve messages, the sending side shows the RTT time for the message to be delivered. After connection is terminated by the client, the server can continue accepting connections"
+  "Chat application that can be started in two modes: client/server. Both sides can send and recieve messages, the sending side shows the RTT time for the message to be delivered. After connection is terminated by the client, the server can continue accepting connections"
 maintainer: ["Lee Koonwen"]
 authors: ["Lee Koonwen"]
 tags: ["chat" "client" "server" "tcp_lwt" "cohttp_lwt" "websocket_lwt"]
