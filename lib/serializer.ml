@@ -18,8 +18,7 @@ let encode code =
 
 type packet = { id : int; code : code; content : string }
 
-(** args [?id ?content] can be ommitted when making packets for code
-    [Close | CloseAck] *)
+(** args [?id ?content] can be ommitted when making packets for code *)
 let make_packet ?(id = 255) ?(content = "\n") code = { id; code; content }
 
 let deserialize str =
