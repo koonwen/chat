@@ -4,7 +4,8 @@ open Unix
 
 (** Number of {b complete} connections that are buffered, for this reason, to
     drop the connections, we need to build in logic after the accepting the
-    connections to drop connections *)
+    connections to drop connections. Read `create_server_socket` docstring for
+    more details *)
 let conn_limit = 1
 
 let new_socket () = socket PF_INET SOCK_STREAM 0
@@ -38,6 +39,8 @@ let create_server_socket host port =
   let socket = new_socket () in
   try
     let sockaddr = get_sockaddr host port in
+    setsockopt socket SO_REUSEADDR true;
+    setsockopt_optint socket SO_LINGER (Some 5);
     bind socket sockaddr;
     listen socket conn_limit;
     socket
@@ -55,7 +58,20 @@ let create_client_socket host port =
     close socket;
     raise e
 
-let handle_connection socket_fd handler =
-  let ic = Lwt_io.(of_fd ~mode:Input socket_fd) in
-  let oc = Lwt_io.(of_fd ~mode:Output socket_fd) in
-  handler ic oc (fun () -> Lwt_unix.close socket_fd)
+(** Creates input and output streams and passes it to the [handler]. Installs
+    SIGINT signal handler to ensure proper termination if CTRL-C is hit. Using
+    the shutdown command also closes the input and output streams *)
+let handle_connection sock handler =
+  let open Lwt in
+  let open Lwt_io in
+  let sig_handler =
+    Lwt_unix.on_signal Sys.sigint (fun _ ->
+        Printf.printf "Close Connection";
+        Lwt_unix.shutdown sock SHUTDOWN_ALL;
+        exit 0)
+  in
+  let ic = of_fd ~mode:Input sock in
+  let oc = of_fd ~mode:Output sock in
+  handler ic oc >|= fun _ ->
+  (* We need to disable the old signal handler and install a new one every connection to bind the correct socket *)
+  Lwt_unix.disable_signal_handler sig_handler

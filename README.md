@@ -2,16 +2,27 @@
 CLI Chat Application in OCaml
 
 # TODO
+- [x] Messaging Logic
+- [x] RTT timings
 - [x] CLI Parsing
 - [x] Setup dependencies and build instructions
-- [ ] Add Lwt_logs to print out info
-- [ ] Safe termination
-- [ ] Testing
+- [x] Safe termination
+- [ ] Add logging flags to print out info, debug levels
+- [ ] Tests
 
 # Build & Running
 ```bash
 # Install switch and dependencies
 make switch
+# Run server with default port 9000
+make server
+# Run client to connect to default server
+make client
+```
+To terminate connection from either side, use CTRL-D. The client will exit but the server will continue to wait for new connections
+To terminate the server entirely, use CTRL-C
+
+``` bash
 # To pull up the CLI interface
 dune exec -- chat --help
 # Run server
@@ -19,9 +30,7 @@ dune exec -- chat listen [PORT]
 # Run client
 dune exec -- chat server [HOST] [PORT]
 ```
-To terminate connection from the client, use CTRL-D.
 
-**Note** Safe termination using CTRL-C not yet implemented.
 # Structure
 ```
 .
@@ -44,6 +53,12 @@ To terminate connection from the client, use CTRL-D.
     ├── chat.ml
     └── dune
 ```
+
+## Conventions
+- `sockUtil.ml` : Socket utilities
+- `client.ml` & `server.ml` : Client & Server specific connecting and listening logic. Opens and Closes sockets and calls handlers. 
+- `handlers.ml` : Connection handlers
+- `serializer.ml` : Data formatting for sent and recieved data
 
 # Pipeline
 ![Pipeline UML diagram](resources/chat.png)
