@@ -22,9 +22,7 @@
   dune
   core_unix
   lwt
-  logs
-  cmdliner
-)
+  cmdliner)
  (tags
   (chat client server tcp_lwt cohttp_lwt websocket_lwt)))
 

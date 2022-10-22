@@ -13,7 +13,6 @@ depends: [
   "dune" {>= "3.1"}
   "core_unix"
   "lwt"
-  "logs"
   "cmdliner"
   "odoc" {with-doc}
 ]
