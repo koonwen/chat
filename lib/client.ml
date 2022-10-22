@@ -1,7 +1,7 @@
 open Lwt.Infix
 
 let connect host port =
-  Printf.printf "Establishing connection with %s:%d ...\n%!"
+  Printf.printf "\nEstablishing connection with %s:%d ...\n%!"
     (Core_unix.Inet_addr.to_string host)
     port;
   let client_sock = SockUtil.create_client_socket host port in

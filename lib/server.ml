@@ -30,7 +30,7 @@ let listen port =
   let localhost = Core_unix.Inet_addr.localhost in
   let server_socket = SockUtil.create_server_socket localhost port in
   SockUtil.install_sigint server_socket |> ignore;
-  Printf.printf "Listening on %s:%d\n%!"
+  Printf.printf "\nListening on %s:%d\n%!"
     (Core_unix.Inet_addr.to_string localhost)
     port;
   let lwt_server_socket = Lwt_unix.of_unix_file_descr server_socket in
