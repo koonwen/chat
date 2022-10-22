@@ -58,20 +58,18 @@ let create_client_socket host port =
     close socket;
     raise e
 
-(** Creates input and output streams and passes it to the [handler]. Installs
-    SIGINT signal handler to ensure proper termination if CTRL-C is hit. Using
-    the shutdown command also closes the input and output streams *)
+(** Creates input and output streams and passes it to the [handler] *)
 let handle_connection sock handler =
-  let open Lwt in
+  (* let open Lwt in *)
   let open Lwt_io in
-  let sig_handler =
-    Lwt_unix.on_signal Sys.sigint (fun _ ->
-        Printf.printf "Close Connection";
-        Lwt_unix.shutdown sock SHUTDOWN_ALL;
-        exit 0)
-  in
   let ic = of_fd ~mode:Input sock in
   let oc = of_fd ~mode:Output sock in
-  handler ic oc >|= fun _ ->
-  (* We need to disable the old signal handler and install a new one every connection to bind the correct socket *)
-  Lwt_unix.disable_signal_handler sig_handler
+  handler ic oc
+
+(** Installs SIGINT signal handler to ensure proper termination if CTRL-C is
+    hit. Using the shutdown command also closes the input and output streams *)
+let install_sigint sock =
+  Lwt_unix.on_signal Sys.sigint (fun _ ->
+      Printf.printf "\n[Interrupt] Close Connection\n%!";
+      Unix.close sock;
+      exit 0)

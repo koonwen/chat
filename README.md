@@ -19,8 +19,8 @@ make server
 # Run client to connect to default server
 make client
 ```
-To terminate connection from either side, use CTRL-D. The client will exit but the server will continue to wait for new connections
-To terminate the server entirely, use CTRL-C
+- [CTRL-D] terminate connection from either side, Client will exit but the server will continue to wait for new connections
+- [CTRL-C] Terminate the server entirely
 
 ``` bash
 # To pull up the CLI interface
