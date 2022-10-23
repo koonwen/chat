@@ -11,11 +11,17 @@ let conn_limit = 1
 let new_socket () = socket PF_INET SOCK_STREAM 0
 
 let get_sockaddr host port =
-  let sockaddr = ADDR_INET (host, port) in
-  sockaddr
+  let addr_info_list =
+    getaddrinfo host port
+      [ AI_FAMILY PF_INET; AI_SOCKTYPE SOCK_STREAM; AI_PROTOCOL 0 ]
+  in
+  if List.length addr_info_list < 1 then failwith "Address not found"
+  else (addr_info_list |> List.hd).ai_addr
 
 let sockaddr_to_string sockaddr =
-  let { ni_hostname; ni_service } = getnameinfo sockaddr [ NI_NUMERICHOST ] in
+  let { ni_hostname; ni_service } =
+    getnameinfo sockaddr [ NI_NUMERICHOST; NI_NUMERICSERV ]
+  in
   ni_hostname ^ ":" ^ ni_service
 
 (** Notes taken from https://ocaml.org/p/core/v0.12.3/doc/Core/Unix/index.html
@@ -35,10 +41,9 @@ let sockaddr_to_string sockaddr =
     In Linux, for example, the system configuration parameters
     tcp_max_syn_backlog, tcp_abort_on_overflow, and syncookies can all affect
     connection queuing behavior. *)
-let create_server_socket host port =
+let create_server_socket sockaddr =
   let socket = new_socket () in
   try
-    let sockaddr = get_sockaddr host port in
     setsockopt socket SO_REUSEADDR true;
     setsockopt_optint socket SO_LINGER (Some 5);
     bind socket sockaddr;
@@ -48,8 +53,7 @@ let create_server_socket host port =
     close socket;
     raise e
 
-let create_client_socket host port =
-  let sockaddr = get_sockaddr host port in
+let create_client_socket sockaddr =
   let socket = new_socket () in
   try
     connect socket sockaddr;

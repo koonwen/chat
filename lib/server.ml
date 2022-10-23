@@ -26,14 +26,20 @@ let rec accept_conn_loop socket () =
               "\nConnection Dropped\nWaiting for another connection\n%!")
   <&> accept_conn_loop socket ()
 
-let listen port =
-  let localhost = Core_unix.Inet_addr.localhost in
-  let server_socket = SockUtil.create_server_socket localhost port in
+let listen sockaddr =
+  let server_socket = SockUtil.create_server_socket sockaddr in
   SockUtil.install_sigint server_socket |> ignore;
-  Printf.printf "\nListening on %s:%d\n%!"
-    (Core_unix.Inet_addr.to_string localhost)
-    port;
+  Printf.printf "\nListening on %s\n%!" @@ SockUtil.sockaddr_to_string sockaddr;
   let lwt_server_socket = Lwt_unix.of_unix_file_descr server_socket in
   accept_conn_loop lwt_server_socket ()
 
-let serve port = Lwt_main.run (listen port)
+let serve port =
+  let sockaddr =
+    try
+      let localhost = "127.0.01" in
+      SockUtil.get_sockaddr localhost port
+    with e ->
+      print_endline @@ Printexc.to_string_default e;
+      exit 1
+  in
+  Lwt_main.run (listen sockaddr)
