@@ -37,21 +37,20 @@ dune exec -- chat server [HOST] [PORT]
 ├── Makefile
 ├── README.md
 ├── bin
-│   ├── cli.ml
-│   ├── dune
-│   └── main.ml
+│   ├── cli.ml
+│   ├── dune
+│   └── main.ml
 ├── chat.opam
 ├── dune-project
 ├── lib
-│   ├── client.ml
-│   ├── dune
-│   ├── handler.ml
-│   ├── serializer.ml
-│   ├── server.ml
-│   └── sockUtil.ml
-└── test
-    ├── chat.ml
-    └── dune
+│   ├── client.ml
+│   ├── dune
+│   ├── handlers.ml
+│   ├── serializer.ml
+│   ├── server.ml
+│   └── sockUtil.ml
+└── resources
+    └── chat.png
 ```
 
 ## Conventions
